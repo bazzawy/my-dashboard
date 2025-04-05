@@ -1,39 +1,115 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>School Dashboard</title>
-  <link rel="stylesheet" href="style.css" />
-  <!-- Load Chart.js from CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-</head>
-<body>
-  <h1>School Dashboard</h1>
-
-  <div class="chart-container">
-    <canvas id="barChart"></canvas>
-  </div>
-
-  <div class="chart-container">
-    <canvas id="lineChart"></canvas>
-  </div>
-
-  <div class="chart-container">
-    <canvas id="pieChart"></canvas>
-  </div>
-
-  <div class="chart-container">
-    <canvas id="doughnutChart"></canvas>
-  </div>
-
-  <div class="chart-container">
-    <canvas id="stackedBarChart"></canvas>
-  </div>
-
-  <div class="chart-container">
-    <canvas id="radarChart"></canvas>
-  </div>
-
-  <script src="script.js"></script>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Excel Data Analysis</title>
+    <!-- Include SheetJS (xlsx) library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Include Chart.js library -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+      }
+      .container {
+        max-width: 800px;
+        margin: 0 auto;
+      }
+      input[type="file"] {
+        margin-bottom: 10px;
+      }
+      button {
+        padding: 10px 20px;
+        margin-bottom: 20px;
+      }
+      canvas {
+        border: 1px solid #ccc;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Upload Excel File for Analysis</h1>
+      <input type="file" id="excelFile" accept=".xlsx,.xls" />
+      <br />
+      <button onclick="handleFile()">Upload and Analyze</button>
+      <div id="output"></div>
+      
+      <h2>Chart Example</h2>
+      <canvas id="myChart" width="600" height="400"></canvas>
+    </div>
+    
+    <script>
+      function handleFile() {
+        var fileInput = document.getElementById("excelFile");
+        var file = fileInput.files[0];
+        if (!file) {
+          document.getElementById("output").innerHTML = "Please select a file.";
+          return;
+        }
+        
+        var reader = new FileReader();
+        reader.onload = function(e) {
+          // Read the file as a binary string
+          var data = e.target.result;
+          // Parse the Excel file using SheetJS
+          var workbook = XLSX.read(data, { type: "binary" });
+          // Get the first sheet
+          var firstSheetName = workbook.SheetNames[0];
+          var worksheet = workbook.Sheets[firstSheetName];
+          // Convert the worksheet to JSON (array-of-arrays mode)
+          var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+          console.log(jsonData);
+          
+          // Check that there is data and at least two columns
+          if (jsonData.length < 2 || jsonData[0].length < 2) {
+            document.getElementById("output").innerHTML = "The file doesn't contain enough data.";
+            return;
+          }
+          
+          // Assume the first row is headers, and data starts from row 2
+          var labels = [];
+          var values = [];
+          for (var i = 1; i < jsonData.length; i++) {
+            // Assume first column is label and second column is numeric value
+            labels.push(jsonData[i][0]);
+            values.push(Number(jsonData[i][1]) || 0);
+          }
+          
+          // Create a chart using the extracted data
+          createChart(labels, values);
+          document.getElementById("output").innerHTML = "File processed successfully.";
+        };
+        reader.onerror = function(error) {
+          document.getElementById("output").innerHTML = "Error reading file: " + error;
+        };
+        reader.readAsBinaryString(file);
+      }
+      
+      function createChart(labels, data) {
+        var ctx = document.getElementById("myChart").getContext("2d");
+        new Chart(ctx, {
+          type: "bar",
+          data: {
+            labels: labels,
+            datasets: [{
+              label: "Data Analysis",
+              data: data,
+              backgroundColor: "rgba(75, 192, 192, 0.6)",
+              borderColor: "rgba(75, 192, 192, 1)",
+              borderWidth: 1
+            }]
+          },
+          options: {
+            scales: {
+              y: {
+                beginAtZero: true
+              }
+            }
+          }
+        });
+      }
+    </script>
+  </body>
 </html>
